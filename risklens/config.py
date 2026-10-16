@@ -37,14 +37,11 @@ class CostMatrixConfig:
     default_fp_cost: float = 3_500.0    # Opportunity cost of declined good applicant
     manual_review_cost: float = 450.0   # Cost to manually investigate flagged application
     default_lgd: float = 0.75           # Loss Given Default percentage
-    
-    # Target approval lift metric
-    target_approval_lift_pct: float = 4.0  # +4% more approvals at matched expected loss rate
 
 
 @dataclass(frozen=True)
 class DriftConfig:
-    """Basel / Credit Industry PSI (Population Stability Index) Benchmarks."""
+    """PSI (Population Stability Index) rule-of-thumb thresholds used in credit-risk monitoring."""
     stable_threshold: float = 0.10      # PSI < 0.10: Stable, no distribution change
     warning_threshold: float = 0.20     # 0.10 <= PSI < 0.20: Moderate drift, monitor
     # PSI >= 0.20: Significant drift, action required (re-calibration / retraining)

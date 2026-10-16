@@ -130,35 +130,42 @@ def run_pipeline():
     console.print(f"[bold green]✓ Optimal Cut-off Threshold: τ* = {opt_threshold:.3f}[/bold green]")
     console.print(f"[green]✓ Loss at Naive 0.5: ₹{opt_res['naive_loss_rupees']:,.0f}[/green]")
     console.print(f"[green]✓ Loss at Optimal Cutoff: ₹{opt_res['min_expected_loss_rupees']:,.0f}[/green]")
-    console.print(f"[bold green]✓ Commercial Savings: ₹{opt_res['total_rupee_savings']:,.0f} ({opt_res['pct_savings']:.1f}% reduction!)[/bold green]")
+    console.print(f"[bold green]✓ Loss vs. naive 0.5 cutoff: ₹{opt_res['total_rupee_savings']:,.0f} lower ({opt_res['pct_savings']:.1f}%); "
+                  f"note this compares against a poor cutoff for a calibrated model[/bold green]")
 
-    # 8. Tradeoff & +4% Approval Expansion Frontier
-    console.print("\n[bold yellow]Step 8: Computing Approval Frontier & +4% Expansion Theorem...[/bold yellow]")
+    # 8. Approval frontier: how many more accounts can RiskLens approve at matched risk?
+    console.print("\n[bold yellow]Step 8: Measuring Approval Lift at Matched Risk (with bootstrap CI)...[/bold yellow]")
     frontier_engine = ApprovalFrontierEngine()
     df_frontier = frontier_engine.generate_frontier_curve(y_test, calib_probs, ead=ead_test, lgd=lgd_test)
     df_frontier.to_parquet(REPORTS_DIR / "frontier_curve.parquet", index=False)
 
     lift_result = frontier_engine.compute_approval_expansion(
-        y_true=y_test,
-        baseline_prob=base_probs,
-        risklens_prob=calib_probs,
-        ead=ead_test,
-        lgd=lgd_test,
-        baseline_approval_rate=0.78,
-        target_lift_pct=4.0,
+        y_true=y_test, baseline_prob=base_probs, risklens_prob=calib_probs,
+        ead=ead_test, lgd=lgd_test, baseline_approval_rate=0.78, match="approved_default_rate",
     )
+    lift_fn = frontier_engine.compute_approval_expansion(
+        y_true=y_test, baseline_prob=base_probs, risklens_prob=calib_probs,
+        ead=ead_test, lgd=lgd_test, baseline_approval_rate=0.78, match="fn_loss",
+    )
+    lift_result["sensitivity_fn_loss_matched"] = {
+        "approval_rate_pct": lift_fn["risklens_expansion"]["approval_rate_pct"],
+        "approval_lift_pct_points": lift_fn["lift_metrics"]["approval_lift_pct_points"],
+        "bootstrap": lift_fn["bootstrap"],
+    }
     with open(REPORTS_DIR / "approval_lift_metrics.json", "w") as f:
         json.dump(lift_result, f, indent=2)
 
+    lm, bs = lift_result["lift_metrics"], lift_result["bootstrap"]
     console.print(Panel(
-        f"[bold cyan]Commercial Approval Expansion Achievement:[/bold cyan]\n"
-        f"• Baseline Scorecard Approvals: {lift_result['baseline']['approval_rate_pct']:.1f}% (Default Rate: {lift_result['baseline']['approved_default_rate_pct']:.2f}%)\n"
-        f"• RiskLens Expanded Approvals: {lift_result['risklens_expansion']['approval_rate_pct']:.1f}% (+4.0% Lift!)\n"
-        f"• RiskLens Expanded Default Rate: {lift_result['risklens_expansion']['approved_default_rate_pct']:.2f}% (Risk Neutral!)\n"
-        f"• Additional Accounts Approved: +{lift_result['lift_metrics']['additional_approved_accounts']:,}\n"
-        f"• Incremental Annual Interchange/Interest Margin: ₹{lift_result['lift_metrics']['incremental_annual_revenue_rupees']:,.0f}\n"
-        f"• Net Commercial Financial Benefit: ₹{lift_result['lift_metrics']['net_financial_benefit_rupees']:,.0f}",
-        title="Portfolio Expansion Milestone"
+        f"[bold cyan]Approval lift at matched approved-default rate (synthetic data, n={lift_result['n_accounts']:,}):[/bold cyan]\n"
+        f"• Baseline Scorecard Approvals: {lift_result['baseline']['approval_rate_pct']:.1f}% (Approved Default Rate: {lift_result['baseline']['approved_default_rate_pct']:.3f}%)\n"
+        f"• RiskLens Approvals: {lift_result['risklens_expansion']['approval_rate_pct']:.2f}% "
+        f"(Approved Default Rate: {lift_result['risklens_expansion']['approved_default_rate_pct']:.3f}%)\n"
+        f"• Measured lift: {lm['approval_lift_pct_points']:+.2f} pts ({lm['additional_approved_accounts']:+,} accounts); "
+        f"bootstrap 95% CI [{bs['lift_pct_points_ci95'][0]:+.2f}, {bs['lift_pct_points_ci95'][1]:+.2f}] pts\n"
+        f"• Matched on FN rupee loss instead: {lift_result['sensitivity_fn_loss_matched']['approval_lift_pct_points']:+.2f} pts\n"
+        f"• Net benefit (assumes ₹{lm['assumed_annual_margin_per_good_account_rupees']:,.0f}/good account/yr): ₹{lm['net_financial_benefit_rupees']:,.0f}",
+        title="Approval Frontier"
     ))
 
     # 9. PSI Data Drift Audit
@@ -178,6 +185,26 @@ def run_pipeline():
     detector.plot_psi_summary(drift_audit, str(PLOTS_DIR / "psi_drift_report.png"))
     status_color = "bold red" if "ALERT" in drift_audit["overall_status"] else "bold green"
     console.print(f"[{status_color}]✓ Overall Drift Status: {drift_audit['overall_status']}[/{status_color}]")
+    with open(REPORTS_DIR / "drift_audit.json", "w") as f:
+        json.dump(drift_audit, f, indent=2, default=str)
+
+    # 10. Run summary: dataset facts and context needed to interpret the numbers honestly
+    from sklearn.metrics import average_precision_score
+    summary = {
+        "data_is_synthetic": True,
+        "n_in_time": int(len(df_intime)), "n_oot": int(len(df_oot)),
+        "default_rate_in_time_pct": float(df_intime["is_default"].mean() * 100),
+        "default_rate_oot_pct": float(df_oot["is_default"].mean() * 100),
+        "split": {"train": int(len(df_train)), "calibration": int(len(df_calib)), "test": int(len(df_test)),
+                  "test_defaults": int(y_test.sum())},
+        "pr_auc_of_true_generating_probability_on_test": float(
+            average_precision_score(y_test, df_test["true_risk_prob"].values)),
+        "calibration_on_test": {k: calib_eval[k] for k in ("brier_score", "ece")},
+        "optimal_threshold": float(opt_threshold),
+        "optimal_threshold_tuned_on": "test set (same cohort the loss is reported on)",
+    }
+    with open(REPORTS_DIR / "run_summary.json", "w") as f:
+        json.dump(summary, f, indent=2)
 
     console.print(Panel.fit("[bold green]✓ RiskLens Production Pipeline Completed Successfully![/bold green]"))
 

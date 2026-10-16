@@ -1,5 +1,7 @@
 """Interactive Streamlit Underwriting & Risk Monitoring Dashboard."""
 
+import json
+
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -93,7 +95,19 @@ def load_runtime_artifacts():
     return artifacts
 
 
+def load_reports() -> dict:
+    """Read the metrics written by scripts/run_pipeline.py so the UI never shows hand-typed numbers."""
+    out = {}
+    for key, name in [("lift", "approval_lift_metrics.json"), ("bench", "model_benchmark.json"),
+                      ("drift", "drift_audit.json"), ("summary", "run_summary.json")]:
+        path = REPORTS_DIR / name
+        if path.exists():
+            out[key] = json.loads(path.read_text())
+    return out
+
+
 artifacts = load_runtime_artifacts()
+reports = load_reports()
 loss_calc = RupeeLossCalculator()
 frontier_engine = ApprovalFrontierEngine()
 
@@ -106,7 +120,7 @@ menu = st.sidebar.radio(
     "Navigation Module",
     [
         "Executive Dashboard",
-        "Cost-Loss Frontier & Approval Lift (+4%)",
+        "Cost-Loss Frontier & Approval Lift",
         "Underwriting Sandbox & SHAP",
         "PSI Drift Monitor",
         "Mathematical Formulations",
@@ -128,20 +142,50 @@ st.sidebar.markdown(f"**Default Cut-off $\\tau^*$:** `{artifacts.get('optimal_th
 if menu == "Executive Dashboard":
     st.title("💳 RiskLens: Cost-Sensitive Credit Underwriting & Fraud Intelligence")
     st.markdown("""
-    **Production Credit Risk Engine tailored for American Express & FinTech Portfolios.**
-    Optimizing for **Expected Rupee Loss rather than accuracy**, calibrated with **PR-AUC**,
-    enforcing regulatory **SHAP explainability**, and safeguarding distribution stability with **PSI (Population Stability Index)**.
+    **Cost-sensitive credit risk engine demo, running on synthetic data.**
+    Optimizes **expected rupee loss rather than accuracy**, ranks with **PR-AUC**,
+    explains decisions with **SHAP**, and monitors drift with **PSI (Population Stability Index)**.
     """)
+    if not reports:
+        st.warning("No pipeline outputs found. Run `python scripts/run_pipeline.py` to populate the metrics below.")
+
+    bench = {r["model_name"]: r for r in reports.get("bench", [])}
+    rl_row = bench.get("RiskLens (Calibrated LightGBM)")
+    sc_row = bench.get("Baseline Scorecard (Logistic)")
+    lift = reports.get("lift")
+    drift = reports.get("drift")
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
-        st.metric("Model PR-AUC", "0.7842", "+28.4% vs Scorecard", help="Precision-Recall AUC is the gold standard for 2.5% default imbalance")
+        if rl_row and sc_row:
+            st.metric("Model PR-AUC", f"{rl_row['pr_auc']:.4f}",
+                      f"{(rl_row['pr_auc'] / sc_row['pr_auc'] - 1) * 100:+.1f}% vs Scorecard",
+                      help="Precision-Recall AUC on the held-out synthetic test set")
+        else:
+            st.metric("Model PR-AUC", "n/a")
     with col2:
-        st.metric("Approval Volume", "82.2%", "+4.0% Approval Lift", help="Achieved target 4% higher approvals at matched risk")
+        if lift:
+            lm = lift["lift_metrics"]
+            lo, hi = lift["bootstrap"]["lift_pct_points_ci95"]
+            st.metric("Approval Volume", f"{lift['risklens_expansion']['approval_rate_pct']:.1f}%",
+                      f"{lm['approval_lift_pct_points']:+.2f} pts at matched risk",
+                      help=f"95% bootstrap CI on the lift: {lo:+.1f} to {hi:+.1f} pts")
+        else:
+            st.metric("Approval Volume", "n/a")
     with col3:
-        st.metric("Net Rupee Savings", "₹1.42 Crore", "Portfolio Size: 20k", help="Saved by shifting from naive 0.5 to cost-optimal threshold")
+        if rl_row and sc_row:
+            gain = sc_row["loss_at_optimal_threshold_rupees"] - rl_row["loss_at_optimal_threshold_rupees"]
+            st.metric("Loss vs Scorecard (best cutoff)", f"₹{gain / 1e5:,.1f} Lakhs lower",
+                      f"{gain / sc_row['loss_at_optimal_threshold_rupees'] * 100:.1f}% reduction",
+                      help="Both models evaluated at their own cost-optimal cutoff on the same test set")
+        else:
+            st.metric("Loss vs Scorecard", "n/a")
     with col4:
-        st.metric("Model PSI Status", "0.048 (STABLE)", "Basel Guideline: < 0.10", help="No significant distribution drift detected in baseline")
+        if drift:
+            st.metric("Model Score PSI", f"{drift['score_psi']:.3f}", drift.get("score_status", ""),
+                      help="Calibrated score, in-time vs out-of-time cohort. Rule of thumb: <0.10 stable, 0.10-0.20 warning, >=0.20 significant")
+        else:
+            st.metric("Model Score PSI", "n/a")
 
     st.markdown("---")
 
@@ -160,20 +204,29 @@ if menu == "Executive Dashboard":
         """)
 
     with col_right:
-        st.subheader("🏆 The +4% Approval Expansion Milestone")
-        st.info("""
-        **Quantified Business Outcome:**
-        
-        By combining **gradient boosted risk-ranking (LightGBM)** with **isotonic probability calibration**, RiskLens separates marginal credit risks from truly prime borrowers with higher precision.
-        
-        This superior ranking allows the risk committee to safely expand the credit approval envelope by **+4.0% (from 78.2% to 82.2%)** while maintaining an identical expected loss rate — generating **₹78+ Lakhs in annualized net interchange margin**.
-        """)
+        st.subheader("🏆 Approval Lift at Matched Risk")
+        if lift:
+            lm, bs = lift["lift_metrics"], lift["bootstrap"]
+            st.info(f"""
+            **Measured on synthetic data (n = {lift['n_accounts']:,} test accounts):**
+
+            Holding the approved-portfolio default rate at or below the baseline scorecard's
+            ({lift['baseline']['approved_default_rate_pct']:.2f}%), RiskLens can approve
+            **{lift['risklens_expansion']['approval_rate_pct']:.1f}%** of applicants versus
+            {lift['baseline']['approval_rate_pct']:.1f}% for the scorecard
+            (**{lm['approval_lift_pct_points']:+.2f} pts**, {lm['additional_approved_accounts']:+,} accounts).
+
+            95% bootstrap interval on the lift: **{bs['lift_pct_points_ci95'][0]:+.1f} to {bs['lift_pct_points_ci95'][1]:+.1f} pts**.
+            The interval is wide because the test set has few defaults.
+            """)
+        else:
+            st.info("Run the pipeline to compute the measured approval lift.")
 
 
 # -------------------------------------------------------------
 # 2. COST-LOSS FRONTIER & APPROVAL LIFT
 # -------------------------------------------------------------
-elif menu == "Cost-Loss Frontier & Approval Lift (+4%)":
+elif menu == "Cost-Loss Frontier & Approval Lift":
     st.title("📈 Approval Volume vs. Expected Rupee Loss Frontier")
     st.markdown("""
     Explore how adjusting the decision threshold shifts the frontier between portfolio approval volume and rupee credit loss.
@@ -249,9 +302,14 @@ elif menu == "Cost-Loss Frontier & Approval Lift (+4%)":
     )
     ax2.tick_params(axis='y', labelcolor=color)
 
-    # Highlight target +4% lift point
-    ax1.axvline(x=78.2, color="#94a3b8", linestyle=":", label="Baseline (78.2%)")
-    ax1.axvline(x=82.2, color="#10b981", linestyle="-.", linewidth=2, label="RiskLens +4% Lift (82.2%)")
+    # Mark baseline and matched-risk approval volumes
+    lift_rep = reports.get("lift")
+    if lift_rep:
+        b_rate = lift_rep["baseline"]["approval_rate_pct"]
+        r_rate = lift_rep["risklens_expansion"]["approval_rate_pct"]
+        ax1.axvline(x=b_rate, color="#94a3b8", linestyle=":", label=f"Scorecard baseline ({b_rate:.1f}%)")
+        ax1.axvline(x=r_rate, color="#10b981", linestyle="-.", linewidth=2,
+                    label=f"RiskLens at matched risk ({r_rate:.1f}%)")
 
     # Current selected threshold point
     ax1.scatter([row["approval_volume_pct"]], [row["total_loss_rupees"] / 100_000], color="#f59e0b", s=120, zorder=5, label="Active Operating Cutoff")
@@ -362,7 +420,7 @@ elif menu == "Underwriting Sandbox & SHAP":
             st.markdown("---")
             res_col1, res_col2, res_col3 = st.columns(3)
             with res_col1:
-                st.metric("Calibrated Default Probability P(Default)", f"{prob:.2%}", help="Isotonically calibrated risk probability")
+                st.metric("Calibrated Default Probability P(Default)", f"{prob:.2%}", help="Platt-scaled (sigmoid) calibrated risk probability")
             with res_col2:
                 st.metric("Applied Decision Cutoff", f"{cutoff:.3f}", help="Cost-sensitive optimal threshold")
             with res_col3:
@@ -392,7 +450,7 @@ elif menu == "Underwriting Sandbox & SHAP":
 
                 # Regulatory Adverse Action Notice if declined
                 if not is_approved:
-                    st.markdown("#### 📜 Regulatory Adverse Action Notice (FCRA / ECOA / RBI Compliant)")
+                    st.markdown("#### 📜 Adverse-Action Style Decline Reasons (illustrative, not a compliance artifact)")
                     reasons = AdverseActionGenerator.generate_reasons(factors, max_reasons=4)
                     for r in reasons:
                         st.markdown(f"* {r}")
@@ -416,7 +474,7 @@ elif menu == "PSI Drift Monitor":
         st.info("Run `risklens drift-check` in the terminal to generate the live PSI audit chart.")
 
     st.markdown("""
-    ### 🚦 Basel Risk Classification Standards:
+    ### 🚦 PSI rule-of-thumb thresholds (industry convention):
     * <span class="badge-stable">PSI < 0.10</span> **STABLE:** No significant shift in credit population. Model is healthy.
     * <span class="badge-warning">0.10 ≤ PSI < 0.20</span> **WARNING:** Moderate drift detected. Increase monitoring frequency.
     * <span class="badge-severe">PSI ≥ 0.20</span> **CRITICAL DRIFT:** Severe population distribution shift. Retraining / recalibration triggered.
@@ -449,7 +507,8 @@ elif menu == "Mathematical Formulations":
     
     ---
 
-    ### 3. Probability Calibration (Isotonic Regression)
-    Minimizes:
-    $$\sum_{i=1}^N (y_i - \hat{m}(s_i))^2 \quad \text{subject to } \hat{m}(s_i) \le \hat{m}(s_j) \text{ whenever } s_i \le s_j$$
+    ### 3. Probability Calibration (Platt scaling)
+    With raw log-odds $s_i$, fit $a, b$ on a held-out calibration set by maximum likelihood:
+    $$\hat{p}_i = \sigma(a\,s_i + b), \qquad \sigma(z) = \frac{1}{1 + e^{-z}}$$
+    Because $\sigma$ is strictly increasing, calibration changes probabilities but not the ranking, so PR-AUC and ROC-AUC are unchanged.
     """)

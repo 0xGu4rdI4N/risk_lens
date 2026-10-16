@@ -54,7 +54,7 @@ REASON_CODE_MAP = {
 
 
 class AdverseActionGenerator:
-    """Translates high-risk SHAP drivers into FCRA / ECOA / RBI compliant decline notices."""
+    """Translates high-risk SHAP drivers into adverse-action style decline reasons (illustrative; not reviewed for regulatory compliance)."""
 
     @staticmethod
     def generate_reasons(

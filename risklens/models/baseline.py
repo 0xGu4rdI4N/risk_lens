@@ -7,7 +7,7 @@ import joblib
 
 
 class LogisticScorecardBaseline:
-    """Traditional linear credit scorecard model used as institutional benchmark."""
+    """Traditional linear credit scorecard model used as the benchmark."""
 
     def __init__(self, random_state: int = 42, max_iter: int = 1000):
         self.model = LogisticRegression(

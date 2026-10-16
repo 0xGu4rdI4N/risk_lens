@@ -1,0 +1,20 @@
+{
+  "data_is_synthetic": true,
+  "n_in_time": 80000,
+  "n_oot": 20000,
+  "default_rate_in_time_pct": 5.95625,
+  "default_rate_oot_pct": 11.935,
+  "split": {
+    "train": 56000,
+    "calibration": 12000,
+    "test": 12000,
+    "test_defaults": 706
+  },
+  "pr_auc_of_true_generating_probability_on_test": 0.7611084353137834,
+  "calibration_on_test": {
+    "brier_score": 0.02618971181027239,
+    "ece": 0.0023068159112877456
+  },
+  "optimal_threshold": 0.04407630522088353,
+  "optimal_threshold_tuned_on": "test set (same cohort the loss is reported on)"
+}

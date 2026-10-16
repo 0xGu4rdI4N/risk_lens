@@ -114,7 +114,7 @@ def score_applicant(request: ScoringRequest):
         )
 
     features_dict = request.features.model_dump()
-    app_id = features_dict.get("applicant_id", "APP-ONLINE")
+    app_id = features_dict.get("applicant_id") or "APP-ONLINE"
     df_single = pd.DataFrame([features_dict])
 
     # Preprocessing
@@ -147,6 +147,10 @@ def score_applicant(request: ScoringRequest):
     adverse_reasons = []
     if runtime_state["explainer"] is not None:
         top_factors = runtime_state["explainer"].explain_instance(X_trans, top_k=5)
+        # The explainer sees scaled features; report the applicant's raw inputs instead.
+        for factor in top_factors:
+            if factor["feature"] in features_dict:
+                factor["feature_value"] = features_dict[factor["feature"]]
         if is_declined:
             adverse_reasons = AdverseActionGenerator.generate_reasons(top_factors, max_reasons=4)
 

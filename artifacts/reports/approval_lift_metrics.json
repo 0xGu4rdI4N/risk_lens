@@ -1,4 +1,6 @@
 {
+  "matched_on": "approved_default_rate",
+  "n_accounts": 12000,
   "baseline": {
     "approval_rate_pct": 78.0,
     "threshold": 0.3643088853250779,
@@ -8,18 +10,42 @@
     "approved_default_rate_pct": 0.5555555555555556
   },
   "risklens_expansion": {
-    "approval_rate_pct": 82.0,
-    "threshold": 0.03997142729477106,
-    "approval_count": 9840,
-    "total_loss_rupees": 11762265.09739,
-    "fn_loss_rupees": 6187815.09739,
-    "approved_default_rate_pct": 0.5589430894308943
+    "approval_rate_pct": 81.90833333333333,
+    "threshold": 0.03917398085797006,
+    "approval_count": 9829,
+    "total_loss_rupees": 11744597.349718,
+    "fn_loss_rupees": 6134697.349718001,
+    "approved_default_rate_pct": 0.5493946484891647
   },
   "lift_metrics": {
-    "approval_lift_pct_points": 4.0,
-    "additional_approved_accounts": 480,
-    "incremental_annual_revenue_rupees": 3100500.0,
-    "net_financial_benefit_rupees": 3602391.8813890005,
-    "risk_neutrality_achieved": true
+    "approval_lift_pct_points": 3.908333333333336,
+    "additional_approved_accounts": 469,
+    "approved_default_rate_delta_pct_points": -0.006160907066390855,
+    "fn_loss_delta_rupees": -555009.6290609995,
+    "assumed_annual_margin_per_good_account_rupees": 6500.0,
+    "incremental_annual_revenue_rupees": 3035500.0,
+    "net_financial_benefit_rupees": 3590509.6290609995
+  },
+  "bootstrap": {
+    "n_resamples": 500,
+    "lift_pct_points_mean": 3.6168333333333336,
+    "lift_pct_points_ci95": [
+      -0.7670833333333333,
+      6.691249999999993
+    ],
+    "share_of_resamples_with_positive_lift": 0.952
+  },
+  "sensitivity_fn_loss_matched": {
+    "approval_rate_pct": 83.18333333333334,
+    "approval_lift_pct_points": 5.183333333333328,
+    "bootstrap": {
+      "n_resamples": 500,
+      "lift_pct_points_mean": 4.6466666666666665,
+      "lift_pct_points_ci95": [
+        0.07375000000000008,
+        6.967499999999999
+      ],
+      "share_of_resamples_with_positive_lift": 0.976
+    }
   }
 }
