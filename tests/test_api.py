@@ -77,3 +77,7 @@ def test_predict_endpoint():
     assert "calibrated_default_prob" in data
     assert "expected_rupee_loss" in data
     assert "top_risk_factors" in data
+    assert data["applicant_id"] == "APP-ONLINE"
+    by_name = {f["feature"]: f for f in data["top_risk_factors"]}
+    if "cibil_score" in by_name:
+        assert by_name["cibil_score"]["feature_value"] == 780  # raw input, not the scaled value

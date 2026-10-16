@@ -156,7 +156,7 @@ def cmd_train(args):
     df_frontier = frontier_engine.generate_frontier_curve(y_test, calib_probs, ead=ead_test, lgd=lgd_test)
     df_frontier.to_parquet(REPORTS_DIR / "frontier_curve.parquet", index=False)
 
-    # Compute +4% approval lift theorem demonstration
+    # Measure the approval lift at matched approved-default rate
     lift_demo = frontier_engine.compute_approval_expansion(
         y_true=y_test,
         baseline_prob=base_probs,
@@ -164,20 +164,18 @@ def cmd_train(args):
         ead=ead_test,
         lgd=lgd_test,
         baseline_approval_rate=0.78,
-        target_lift_pct=4.0,
     )
+    ci_lo, ci_hi = lift_demo["bootstrap"]["lift_pct_points_ci95"]
 
     console.print(Panel(
-        f"[bold gold1]Approval Expansion Frontier Result (+4% Target):[/bold gold1]\n"
+        f"[bold gold1]Approval lift at matched approved-default rate (synthetic data):[/bold gold1]\n"
         f"• Baseline Approval Volume: [cyan]{lift_demo['baseline']['approval_rate_pct']:.1f}%[/cyan] "
         f"(Approved Default Rate: {lift_demo['baseline']['approved_default_rate_pct']:.2f}%)\n"
-        f"• RiskLens Expanded Approval Volume: [bold green]{lift_demo['risklens_expansion']['approval_rate_pct']:.1f}% (+4.0% Lift)[/bold green] "
+        f"• RiskLens Approval Volume: [bold green]{lift_demo['risklens_expansion']['approval_rate_pct']:.1f}% "
+        f"({lift_demo['lift_metrics']['approval_lift_pct_points']:+.2f} pts, 95% bootstrap CI {ci_lo:+.1f} to {ci_hi:+.1f})[/bold green] "
         f"(Approved Default Rate: {lift_demo['risklens_expansion']['approved_default_rate_pct']:.2f}%)\n"
-        f"• Additional Accounts Approved: [bold green]+{lift_demo['lift_metrics']['additional_approved_accounts']:,}[/bold green]\n"
-        f"• Incremental Annual Revenue: [bold green]₹{lift_demo['lift_metrics']['incremental_annual_revenue_rupees']:,.0f}[/bold green]\n"
-        f"• Net Commercial Financial Benefit: [bold green]₹{lift_demo['lift_metrics']['net_financial_benefit_rupees']:,.0f}[/bold green]\n"
-        f"• Risk Neutrality Maintained: [bold green]{lift_demo['lift_metrics']['risk_neutrality_achieved']}[/bold green]",
-        title="Commercial Underwriting Frontier"
+        f"• Additional Accounts Approved: [bold green]{lift_demo['lift_metrics']['additional_approved_accounts']:+,}[/bold green]",
+        title="Underwriting Frontier"
     ))
 
 

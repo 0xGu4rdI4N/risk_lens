@@ -1,0 +1,101 @@
+{
+  "timestamp": "2026-10-16T13:18:47.018025",
+  "baseline_count": 10000,
+  "target_count": 10000,
+  "score_psi": 0.1871784565583996,
+  "score_status": "WARNING",
+  "overall_status": "CRITICAL_DRIFT_ALERT",
+  "features": [
+    {
+      "feature": "revolving_utilization",
+      "type": "numerical",
+      "psi": 1.084788199910427,
+      "status": "SEVERE_DRIFT"
+    },
+    {
+      "feature": "cibil_score",
+      "type": "numerical",
+      "psi": 0.1428403708953631,
+      "status": "WARNING"
+    },
+    {
+      "feature": "delinquencies_2yr",
+      "type": "numerical",
+      "psi": 0.0817023494240632,
+      "status": "STABLE"
+    },
+    {
+      "feature": "debt_to_income",
+      "type": "numerical",
+      "psi": 0.07246143628367668,
+      "status": "STABLE"
+    },
+    {
+      "feature": "exposure_at_default",
+      "type": "numerical",
+      "psi": 0.007917724013273363,
+      "status": "STABLE"
+    },
+    {
+      "feature": "inquiries_last_6m",
+      "type": "numerical",
+      "psi": 0.006336614250613387,
+      "status": "STABLE"
+    },
+    {
+      "feature": "annual_income",
+      "type": "numerical",
+      "psi": 0.0025557001326318514,
+      "status": "STABLE"
+    },
+    {
+      "feature": "credit_history_months",
+      "type": "numerical",
+      "psi": 0.0022357488658965494,
+      "status": "STABLE"
+    },
+    {
+      "feature": "merchant_category",
+      "type": "categorical",
+      "psi": 0.0021110633911630102,
+      "status": "STABLE"
+    },
+    {
+      "feature": "open_credit_lines",
+      "type": "numerical",
+      "psi": 0.002090232139705018,
+      "status": "STABLE"
+    },
+    {
+      "feature": "device_risk_score",
+      "type": "numerical",
+      "psi": 0.0018697235715233443,
+      "status": "STABLE"
+    },
+    {
+      "feature": "loss_given_default",
+      "type": "numerical",
+      "psi": 0.0006682984820398786,
+      "status": "STABLE"
+    },
+    {
+      "feature": "requested_credit_limit",
+      "type": "numerical",
+      "psi": 0.0004905833210188676,
+      "status": "STABLE"
+    },
+    {
+      "feature": "transaction_velocity_24h",
+      "type": "numerical",
+      "psi": 0.0001771258122979793,
+      "status": "STABLE"
+    },
+    {
+      "feature": "employment_type",
+      "type": "categorical",
+      "psi": 0.00014553442298040654,
+      "status": "STABLE"
+    }
+  ],
+  "features_df": "                     feature         type       psi        status\n0      revolving_utilization    numerical  1.084788  SEVERE_DRIFT\n1                cibil_score    numerical  0.142840       WARNING\n2          delinquencies_2yr    numerical  0.081702        STABLE\n3             debt_to_income    numerical  0.072461        STABLE\n4        exposure_at_default    numerical  0.007918        STABLE\n5          inquiries_last_6m    numerical  0.006337        STABLE\n6              annual_income    numerical  0.002556        STABLE\n7      credit_history_months    numerical  0.002236        STABLE\n8          merchant_category  categorical  0.002111        STABLE\n9          open_credit_lines    numerical  0.002090        STABLE\n10         device_risk_score    numerical  0.001870        STABLE\n11        loss_given_default    numerical  0.000668        STABLE\n12    requested_credit_limit    numerical  0.000491        STABLE\n13  transaction_velocity_24h    numerical  0.000177        STABLE\n14           employment_type  categorical  0.000146        STABLE"
+}

@@ -1,6 +1,6 @@
 """Population Stability Index (PSI) and Characteristic Stability Index (CSI).
 
-Implements the standard Basel / Amex risk monitoring metric to detect data distribution drift.
+Implements the Population Stability Index, a common credit-risk monitoring metric, to detect data distribution drift.
 """
 
 from typing import Dict, List, Optional, Tuple, Union
