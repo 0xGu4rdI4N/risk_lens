@@ -1,0 +1,25 @@
+{
+  "baseline": {
+    "approval_rate_pct": 78.0,
+    "threshold": 0.4821851736325508,
+    "approval_count": 9360,
+    "total_loss_rupees": 17648001.458342,
+    "fn_loss_rupees": 9115601.458342,
+    "approved_default_rate_pct": 0.7478632478632479
+  },
+  "risklens_expansion": {
+    "approval_rate_pct": 82.0,
+    "threshold": 0.03156708004509583,
+    "approval_count": 9955,
+    "total_loss_rupees": 20144404.281403996,
+    "fn_loss_rupees": 13596904.281403998,
+    "approved_default_rate_pct": 1.0246107483676543
+  },
+  "lift_metrics": {
+    "approval_lift_pct_points": 4.0,
+    "additional_approved_accounts": 595,
+    "incremental_annual_revenue_rupees": 3659500.0,
+    "net_financial_benefit_rupees": -821802.8230619971,
+    "risk_neutrality_achieved": false
+  }
+}

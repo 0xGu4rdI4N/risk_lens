@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "risk-lens"
+version = "1.0.0"
+description = "Cost-Sensitive Credit Default & Fraud Detection Engine optimizing Expected Rupee Loss, PR-AUC, SHAP, and PSI Drift Monitoring"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Raunak Kumar", email = "0xGu4rdI4N@users.noreply.github.com"}
+]
+keywords = [
+    "credit-risk",
+    "fraud-detection",
+    "cost-sensitive-learning",
+    "threshold-optimization",
+    "shap-explainability",
+    "psi-drift-monitoring",
+    "pr-auc",
+    "fintech",
+    "amex"
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+dependencies = [
+    "numpy>=1.26.0",
+    "pandas>=2.1.0",
+    "scipy>=1.11.0",
+    "scikit-learn>=1.4.0",
+    "lightgbm>=4.3.0",
+    "xgboost>=2.0.0",
+    "shap>=0.45.0",
+    "matplotlib>=3.8.0",
+    "seaborn>=0.13.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.28.0",
+    "pydantic>=2.6.0",
+    "streamlit>=1.32.0",
+    "rich>=13.7.0",
+    "joblib>=1.3.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "httpx>=0.27.0"
+]
+
+[project.scripts]
+risklens = "risklens.cli:main"
