@@ -91,8 +91,8 @@ def cmd_train(args):
         lgb_model.fit(X_train, y_train, eval_set=[(X_calib, y_calib)])
         lgb_model.save(str(MODELS_DIR / "lightgbm_model.joblib"))
 
-        # 3. Probability Calibrator (Isotonic)
-        calibrator = ProbabilityCalibrator(method="isotonic")
+        # 3. Probability Calibrator (Platt Scaling)
+        calibrator = ProbabilityCalibrator(method="sigmoid")
         calibrator.fit(lgb_model.model, X_calib, y_calib)
         calibrator.save(str(MODELS_DIR / "calibrator.joblib"))
 

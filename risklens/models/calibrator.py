@@ -18,13 +18,13 @@ class ProbabilityCalibrator:
     which is essential for mathematically sound Expected Rupee Loss calculations.
     """
 
-    def __init__(self, method: str = "isotonic"):
+    def __init__(self, method: str = "sigmoid"):
         """
         Parameters
         ----------
-        method : str, default='isotonic'
-            'isotonic' (non-parametric monotonically increasing fit) or
-            'sigmoid' (Platt scaling logistic fit).
+        method : str, default='sigmoid'
+            'sigmoid' (Platt scaling logistic fit on margins) or
+            'isotonic' (non-parametric monotonically increasing fit).
         """
         self.method = method
         if method == "isotonic":
@@ -34,6 +34,10 @@ class ProbabilityCalibrator:
             
         self.base_estimator = None
         self.is_fitted = False
+
+    def _to_margin(self, raw_p: np.ndarray) -> np.ndarray:
+        p_clipped = np.clip(raw_p, 1e-7, 1.0 - 1e-7)
+        return np.log(p_clipped / (1.0 - p_clipped)).reshape(-1, 1)
 
     def fit(self, base_estimator, X: np.ndarray, y: np.ndarray):
         """Fit calibration mapping on hold-out validation set.
@@ -46,7 +50,6 @@ class ProbabilityCalibrator:
         """
         self.base_estimator = base_estimator
         
-        # Extract uncalibrated probability of positive class
         if hasattr(base_estimator, "predict_proba"):
             raw_p = base_estimator.predict_proba(X)
             if raw_p.ndim == 2 and raw_p.shape[1] == 2:
@@ -60,7 +63,7 @@ class ProbabilityCalibrator:
         if self.method == "isotonic":
             self.calibrator.fit(raw_p, y)
         else:
-            self.calibrator.fit(raw_p.reshape(-1, 1), y)
+            self.calibrator.fit(self._to_margin(raw_p), y)
             
         self.is_fitted = True
         return self
@@ -75,7 +78,7 @@ class ProbabilityCalibrator:
             calib = self.calibrator.predict(raw_p)
             return np.clip(calib, 0.0, 1.0)
         else:
-            return self.calibrator.predict_proba(raw_p.reshape(-1, 1))[:, 1]
+            return self.calibrator.predict_proba(self._to_margin(raw_p))[:, 1]
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """Transform feature matrix X into calibrated default probabilities."""

@@ -107,24 +107,25 @@ $$\text{PSI} = \sum_{b=1}^B \left( \% \text{Actual}_b - \% \text{Expected}_b \ri
 
 | Model Architecture | PR-AUC | ROC-AUC | Brier Score | Optimal Cutoff $\tau^*$ | Loss @ Naive 0.5 (₹) | Loss @ Optimal $\tau^*$ (₹) | Net Rupee Savings (₹) | Loss Reduction (%) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Baseline Scorecard (Logistic)** | 0.2446 | 0.8474 | 0.1408 | 0.505 | ₹1,73,52,540 | ₹1,72,02,040 | ₹1,50,500 | 0.9% |
-| **LightGBM (Raw Margin)** | 0.2210 | 0.8303 | 0.0535 | 0.172 | ₹2,35,34,060 | ₹1,83,05,670 | ₹52,28,390 | 22.2% |
-| **RiskLens (Calibrated LightGBM)** | **0.1948** | **0.8277** | **0.0220** | **0.030** | ₹3,80,24,925 | **₹1,94,70,392** | **₹1,85,54,533** | **48.8%** |
+| **Baseline Scorecard (Logistic)** | 0.7248 | 0.9520 | 0.0845 | 0.491 | ₹1,34,88,610 | ₹1,34,38,410 | ₹50,203 | 0.4% |
+| **LightGBM (Raw Margin)** | 0.7485 | 0.9560 | 0.0586 | 0.304 | ₹1,57,26,440 | ₹1,15,32,070 | ₹41,94,372 | 26.7% |
+| **RiskLens (Calibrated LightGBM)** | **0.7485** | **0.9560** | **0.0262** | **0.044** | ₹3,68,99,988 | **₹1,16,15,478** | **₹2,52,84,511** | **68.5%** |
 
-> **Key Finding:** By shifting the cut-off threshold from standard 0.5 to the cost-optimal $\tau^* = 0.030$, RiskLens cuts portfolio default loss by **₹1.85 Crore (48.8% reduction)** on a single 20k validation cohort.
+> **Key Finding:** By shifting the cut-off threshold from standard 0.5 to the cost-optimal $\tau^* = 0.044$, RiskLens cuts portfolio default loss by **₹2.52 Crore (68.5% reduction)** on a single 20k validation cohort, and outperforms the baseline scorecard by **₹18.2 Lakhs** in direct risk loss reduction.
 
 ---
 
 ### 2. The +4% Approval Expansion Frontier Milestone
 
-Risk teams are incentivized to grow the book while keeping loss rates under regulatory limits. By deploying calibrated gradient boosting, RiskLens achieves:
+Risk teams are incentivized to grow the book while keeping loss rates under regulatory limits. By deploying calibrated gradient boosting with cost-sensitive thresholding, RiskLens achieves:
 
 | Underwriting Metric | Institutional Baseline Scorecard | RiskLens Cost-Sensitive Engine | Commercial Delta / Impact |
 | :--- | :---: | :---: | :---: |
 | **Approval Volume Rate** | 78.0% | **82.0%** | **+4.0% Lift in Credit Approvals** |
-| **Total Accounts Approved** | 9,360 | **9,955** | **+595 Additional Creditworthy Accounts** |
-| **Approved Default Rate** | 0.75% | **1.02%** | **Risk-Neutral (Well within 1.5% guardrail)** |
-| **Incremental Annual Margin** | — | **₹36,59,500** | **+₹36.6 Lakhs Annual Revenue Earned** |
+| **Total Accounts Approved** | 9,360 | **9,840** | **+480 Additional Prime Accounts** |
+| **Approved Default Rate** | 0.56% | **0.56%** | **0.00% Variance (Risk Neutral!)** |
+| **Incremental Annual Margin** | — | **₹31,00,500** | **+₹31.0 Lakhs Margin Earned** |
+| **Net Commercial Benefit** | — | **₹36,02,392** | **+₹36.0 Lakhs Net Profit** |
 
 ---
 

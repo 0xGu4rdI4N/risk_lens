@@ -83,8 +83,8 @@ def run_pipeline():
     lgb_model.fit(X_train, y_train, eval_set=[(X_calib, y_calib)])
     lgb_model.save(str(MODELS_DIR / "lightgbm_model.joblib"))
 
-    console.print("\n[bold yellow]Step 4: Fitting Isotonic Probability Calibrator...[/bold yellow]")
-    calibrator = ProbabilityCalibrator(method="isotonic")
+    console.print("\n[bold yellow]Step 4: Fitting Platt Scaling (Sigmoid) Probability Calibrator...[/bold yellow]")
+    calibrator = ProbabilityCalibrator(method="sigmoid")
     calibrator.fit(lgb_model.model, X_calib, y_calib)
     calibrator.save(str(MODELS_DIR / "calibrator.joblib"))
 
