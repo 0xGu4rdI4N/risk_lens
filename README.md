@@ -313,7 +313,7 @@ risk_lens/
 │   ├── explainability/          # TreeSHAP explainer, adverse-action style reasons
 │   ├── monitoring/              # PSI and drift audit
 │   ├── spark/                   # PySpark scoring, rupee loss and PSI (optional)
-│   ├── api/app.py               # FastAPI service (/predict, /drift, /health)
+│   ├── api/app.py               # FastAPI service (/health, /predict, /batch-predict, /config/costs)
 │   └── dashboard/app.py         # Streamlit dashboard (reads artifacts/reports)
 ├── scripts/
 │   ├── run_pipeline.py          # Full pipeline; writes artifacts/reports/*.json
