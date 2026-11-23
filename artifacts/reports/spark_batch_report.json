@@ -1,0 +1,124 @@
+{
+  "rows": {
+    "in_time": 80000,
+    "oot": 20000
+  },
+  "replicate": 1,
+  "spark_version": "4.2.0",
+  "threshold_from_pipeline": 0.04407630522088353,
+  "timings_s": {
+    "score_and_write": 6.047786000010092,
+    "loss_curve_250_thresholds": 2.0710914160008542,
+    "psi_all_features": 5.164357875008136
+  },
+  "loss_in_time": {
+    "total_accounts": 80000,
+    "fn_loss_rupees": 29113872.055657998,
+    "count_fp": 9468,
+    "count_tp": 4517,
+    "count_fn": 248,
+    "approval_count": 66015,
+    "threshold": 0.04407630522088353,
+    "fp_loss_rupees": 33138000.0,
+    "tp_friction_rupees": 2032650.0,
+    "total_loss_rupees": 64284522.055658,
+    "approval_rate": 0.8251875,
+    "approved_default_rate": 0.003756721957130955
+  },
+  "loss_oot": {
+    "total_accounts": 20000,
+    "fn_loss_rupees": 16482993.249884002,
+    "count_fp": 3520,
+    "count_tp": 2246,
+    "count_fn": 141,
+    "approval_count": 14234,
+    "threshold": 0.04407630522088353,
+    "fp_loss_rupees": 12320000.0,
+    "tp_friction_rupees": 1010700.0,
+    "total_loss_rupees": 29813693.249884002,
+    "approval_rate": 0.7117,
+    "approved_default_rate": 0.009905859210341436
+  },
+  "optimal_threshold_in_time": {
+    "optimal_threshold": 0.04407630522088353,
+    "min_loss_rupees": 64284522.055658,
+    "approval_rate": 0.8251875
+  },
+  "psi": {
+    "score": {
+      "psi": 0.18346651243368642,
+      "status": "WARNING"
+    },
+    "features": [
+      {
+        "feature": "revolving_utilization",
+        "psi": 1.0880162579249224,
+        "status": "SEVERE_DRIFT"
+      },
+      {
+        "feature": "cibil_score",
+        "psi": 0.14429752409745866,
+        "status": "WARNING"
+      },
+      {
+        "feature": "delinquencies_2yr",
+        "psi": 0.09089201395735125,
+        "status": "STABLE"
+      },
+      {
+        "feature": "debt_to_income",
+        "psi": 0.07351859715305047,
+        "status": "STABLE"
+      },
+      {
+        "feature": "inquiries_last_6m",
+        "psi": 0.006407727813988806,
+        "status": "STABLE"
+      },
+      {
+        "feature": "device_risk_score",
+        "psi": 0.001038404192699118,
+        "status": "STABLE"
+      },
+      {
+        "feature": "annual_income",
+        "psi": 0.0008490604131356824,
+        "status": "STABLE"
+      },
+      {
+        "feature": "open_credit_lines",
+        "psi": 0.0007363232081796057,
+        "status": "STABLE"
+      },
+      {
+        "feature": "transaction_velocity_24h",
+        "psi": 0.0005016792623125205,
+        "status": "STABLE"
+      },
+      {
+        "feature": "requested_credit_limit",
+        "psi": 0.0004068963537768507,
+        "status": "STABLE"
+      },
+      {
+        "feature": "merchant_category",
+        "psi": 0.00026202301767953265,
+        "status": "STABLE"
+      },
+      {
+        "feature": "credit_history_months",
+        "psi": 0.00019675162770542724,
+        "status": "STABLE"
+      },
+      {
+        "feature": "employment_type",
+        "psi": 0.00015720214162111474,
+        "status": "STABLE"
+      }
+    ]
+  },
+  "pandas_in_time_score_and_loss": {
+    "rows": 80000,
+    "seconds": 0.31480220903176814
+  }
+}
