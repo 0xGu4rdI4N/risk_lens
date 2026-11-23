@@ -58,3 +58,6 @@ dev = [
 
 [project.scripts]
 risklens = "risklens.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["risklens*"]
