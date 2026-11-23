@@ -41,8 +41,8 @@ env/
 htmlcov/
 
 # Data and large artifacts (keep models/lightweight samples)
-data/
-data/raw/
+/data/
+/data/raw/
 *.csv.gz
 *.parquet
 
