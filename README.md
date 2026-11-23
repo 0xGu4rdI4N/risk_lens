@@ -8,13 +8,13 @@
 > A cost-sensitive credit default classifier that chooses its approval cutoff by **expected rupee loss rather than accuracy**, ranks risk with **PR-AUC**, calibrates probabilities with **Platt scaling**, explains decisions with **SHAP**, and monitors drift with **PSI**.
 
 > [!IMPORTANT]
-> **All data in this repository is synthetic.** Applicants, defaults, EAD and LGD are produced by `risklens/data/generator.py` from a hand-written risk model. Every number below describes how the method behaves on that generator, not on real borrowers, and none of it should be read as evidence about real-world portfolio performance. Section [Limitations](#-limitations-read-before-quoting-any-number) lists what this does and does not show.
+> **All data in this repository is synthetic.** Applicants, defaults, EAD and LGD are produced by `risklens/data/generator.py` from a hand-written risk model. Every number below describes how the method behaves on that generator, not on real borrowers, and none of it should be read as evidence about real-world portfolio performance. Section [Limitations](#limitations-read-before-quoting-any-number) lists what this does and does not show.
 
 Every figure in this README is copied from the files that `scripts/run_pipeline.py` writes to `artifacts/reports/` (`model_benchmark.json`, `approval_lift_metrics.json`, `drift_audit.json`, `run_summary.json`). Re-run the pipeline and they will match.
 
 ---
 
-## 📌 Problem
+## Problem
 
 In credit underwriting the two error types have very different costs, so accuracy and the default `0.5` cutoff are the wrong targets:
 
@@ -37,36 +37,36 @@ The cost parameters are assumptions set in `risklens/config.py`, not measured va
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ```mermaid
 flowchart TD
     subgraph Ingestion["1. Synthetic data (100k records)"]
-        A[In-Time Applications: 80k] --> C[Feature Pipeline]
-        B[Out-Of-Time Drift Cohort: 20k] --> C
+        A["In-Time Applications: 80k"] --> C["Feature Pipeline"]
+        B["Out-Of-Time Drift Cohort: 20k"] --> C
     end
 
     subgraph Modeling["2. Modelling and calibration"]
-        C --> D[LightGBM / Logistic Baseline]
-        D --> E[Platt Scaling Calibrator]
-        E --> F[Calibrated P(Default)]
+        C --> D["LightGBM / Logistic Baseline"]
+        D --> E["Platt Scaling Calibrator"]
+        E --> F["Calibrated P(Default)"]
     end
 
     subgraph Optimization["3. Cost-sensitive optimisation"]
-        F --> G[Rupee Loss: EAD x LGD vs FP cost]
-        G --> H[Threshold search: argmin L(tau)]
-        H --> I[Approval lift at matched risk + bootstrap CI]
+        F --> G["Rupee Loss: EAD x LGD vs FP cost"]
+        G --> H["Threshold search: argmin L(tau)"]
+        H --> I["Approval lift at matched risk + bootstrap CI"]
     end
 
     subgraph Monitoring["4. Explainability and drift"]
-        D --> J[TreeSHAP Explainer]
-        J --> K[Adverse-action style reasons]
-        F --> L[PSI: score and feature drift]
+        D --> J["TreeSHAP Explainer"]
+        J --> K["Adverse-action style reasons"]
+        F --> L["PSI: score and feature drift"]
     end
 
     subgraph Serving["5. Serving and UI"]
-        H --> N[FastAPI service]
-        I --> O[Streamlit dashboard]
+        H --> N["FastAPI service"]
+        I --> O["Streamlit dashboard"]
         K --> N
         L --> O
     end
@@ -74,7 +74,7 @@ flowchart TD
 
 ---
 
-## 📐 Mathematical Formulation
+## Mathematical Formulation
 
 ### 1. Portfolio expected rupee loss
 Let $y_i \in \{0, 1\}$ be the default indicator, $p_i$ the calibrated default probability and $\tau$ the cutoff. An applicant is approved if $p_i \le \tau$ and declined if $p_i > \tau$.
@@ -84,7 +84,7 @@ $$\mathcal{L}(\tau) = \sum_{i=1}^N \Big[ y_i \cdot \mathbb{I}(p_i \le \tau) \cdo
 In the synthetic generator:
 * $\text{EAD}_i = \text{Credit Limit}_i \times \text{clip}(0.65 + 0.35 \times \text{Utilization}_i,\ 0.5,\ 1.0)$
 * $\text{LGD}_i \sim \text{Beta}(7, 3)$ clipped to $[0.45, 0.95]$
-* $\text{Cost}_{FP} = ₹3{,}500$, $C_{\text{review}} = ₹450$
+* Cost of a false positive: ₹3,500. Manual review cost: ₹450.
 
 $$\tau^* = \arg\min_{\tau \in [0.005,\ 0.70]} \mathcal{L}(\tau)$$
 
@@ -92,15 +92,15 @@ $$\tau^* = \arg\min_{\tau \in [0.005,\ 0.70]} \mathcal{L}(\tau)$$
 With raw log-odds $s_i$, fit $a, b$ on a held-out calibration split: $\hat{p}_i = \sigma(a\,s_i + b)$. Because $\sigma$ is strictly increasing this changes probabilities but **not the ranking**, so PR-AUC and ROC-AUC are identical before and after calibration (see the table below).
 
 ### 3. Population Stability Index
-Features and scores are binned into $B=10$ buckets:
+Features and scores are binned into $B=10$ buckets. $E_b$ is the share of baseline records in bin $b$ and $A_b$ the share of current records:
 
-$$\text{PSI} = \sum_{b=1}^B \left( \% \text{Actual}_b - \% \text{Expected}_b \right) \times \ln\left( \frac{\% \text{Actual}_b}{\% \text{Expected}_b} \right)$$
+$$\text{PSI} = \sum_{b=1}^B \left( A_b - E_b \right) \times \ln\left( \frac{A_b}{E_b} \right)$$
 
 Rule-of-thumb thresholds used in credit-risk monitoring: **< 0.10** stable, **0.10 to 0.20** warning, **≥ 0.20** significant drift.
 
 ---
 
-## 📊 Results (synthetic data)
+## Results (synthetic data)
 
 Setup: 80,000 in-time records split 56,000 train / 12,000 calibration / 12,000 test (706 defaults in the test set). In-time default rate 5.96%; the out-of-time cohort (20,000 records, drift injected on purpose) has 11.94%.
 
@@ -135,7 +135,7 @@ Question: if the scorecard approves its lowest-risk 78% of applicants, how many 
 
 ---
 
-## 🔍 Explainability
+## Explainability
 
 TreeSHAP attributions explain individual decisions, and top drivers of a decline are mapped to reason codes in an adverse-action style:
 
@@ -152,7 +152,7 @@ These reason texts are illustrative. They have not been reviewed against FCRA, E
 
 ---
 
-## 🛡️ PSI drift monitoring
+## PSI drift monitoring
 
 The audit compares the first 10,000 in-time records with the first 10,000 out-of-time records, and score drift on 5,000 scores each. The out-of-time cohort is generated with a deliberate shift (lower bureau scores, higher utilisation, more delinquencies), so detecting drift here confirms the monitor works, not that a real portfolio drifted.
 
@@ -171,7 +171,25 @@ Overall status: **CRITICAL_DRIFT_ALERT** (driven by `revolving_utilization`). Fu
 
 ---
 
-## ⚠️ Limitations (read before quoting any number)
+## Spark batch pipeline
+
+`risklens/spark/` re-implements three pieces of the pandas pipeline as distributed jobs:
+
+| Module | What it does | Spark pattern |
+| :--- | :--- | :--- |
+| `scoring.py` | Applies the saved preprocessor and calibrated LightGBM to a DataFrame, writes decisions partitioned by `APPROVED`/`DECLINED` | `mapInPandas` (Arrow batches), model loaded once per worker |
+| `loss.py` | Portfolio rupee loss and the 250-point cutoff search | Conditional aggregations; threshold grid broadcast and cross-joined, one `groupBy` pass |
+| `psi.py` | PSI for numeric and categorical features | `approxQuantile` for bin edges, `Bucketizer`, grouped counts |
+
+**Correctness.** `tests/test_spark.py` checks each piece against the pandas/numpy code: scores agree to 1e-9, rupee loss and the optimal cutoff agree exactly, and PSI bin counts are identical when given the same breakpoints (PSI values agree within a small tolerance, because numpy interpolates quantiles while Spark picks data points). Replicating the data 25x leaves every PSI value unchanged (revolving utilization 1.088 at both 100k and 2.5M rows), which shows the result does not depend on partitioning. The tests skip automatically when no JDK is installed.
+
+**Performance, honestly.** This runs in local mode on one laptop, and Spark is *not* faster here. Scoring 80,000 in-time rows plus rupee loss takes about 0.3 s in pandas. The Spark job scores both cohorts (100,000 rows), writes parquet, and then runs the threshold sweep and PSI, taking about 13 s in total (6 s scoring and writing, 2 s cutoff search, 5 s PSI). At 2 million replicated rows pandas still wins (4.7 s for scoring and loss, versus 17.5 s for the Spark job, which also writes output and scores a second cohort). The point of the Spark version is that the same logic is partition-parallel and runs unchanged on a cluster, not that it speeds up this dataset, which is small by design.
+
+**Note.** The batch job scores the full in-time cohort, which includes the rows the model was trained on, so its loss figures are not out-of-sample. The test-set numbers above remain the ones to quote. Because PSI is computed on all 100,000 rows instead of 10,000-row samples, values differ slightly from the drift table above (score PSI 0.183 vs 0.187). Output is in `artifacts/reports/spark_batch_report.json`.
+
+---
+
+## Limitations (read before quoting any number)
 
 * **Synthetic data.** Labels are drawn from `true_risk_prob`, a logistic function of the features written in the generator. A model scoring PR-AUC 0.7485 is close to the **0.7611** that the *true generating probability* itself achieves on this test set, so the headline metrics mostly reflect the generator's signal-to-noise ratio. The generator also includes interaction terms, which favour tree models over a linear scorecard by construction.
 * **One dataset, one seed.** No repeated runs across seeds, and a single train/calibration/test split.
@@ -183,7 +201,7 @@ Overall status: **CRITICAL_DRIFT_ALERT** (driven by `revolving_utilization`). Fu
 
 ---
 
-## 🚀 Quickstart
+## Quickstart
 
 ### 1. Set up
 ```bash
@@ -223,9 +241,18 @@ uvicorn risklens.api.app:app --host 0.0.0.0 --port 8000 --reload
 ```
 Swagger docs at `http://localhost:8000/docs`.
 
+### 7. Run the Spark batch pipeline (optional)
+A PySpark version of the batch work: score applicants with the saved model, evaluate rupee loss across a threshold grid, and compute PSI for every feature. Needs a JDK 17+ and the Spark extra (see [Spark batch pipeline](#spark-batch-pipeline)):
+```bash
+brew install openjdk@17            # or any JDK 17+
+pip install -r requirements-spark.txt
+python scripts/run_pipeline.py     # writes the model artifacts the batch job reads
+python scripts/run_spark_batch.py --compare-pandas
+```
+
 ---
 
-## 🔌 API
+## API
 
 ### Score a single applicant
 ```bash
@@ -269,7 +296,7 @@ Response produced by the committed artifacts (SHAP list shortened to two entries
 
 ---
 
-## 📁 Repository structure
+## Repository structure
 
 ```
 risk_lens/
@@ -285,22 +312,24 @@ risk_lens/
 │   ├── models/                  # Scorecard, LightGBM/XGBoost, Platt/isotonic calibrator, evaluator
 │   ├── explainability/          # TreeSHAP explainer, adverse-action style reasons
 │   ├── monitoring/              # PSI and drift audit
+│   ├── spark/                   # PySpark scoring, rupee loss and PSI (optional)
 │   ├── api/app.py               # FastAPI service (/predict, /drift, /health)
 │   └── dashboard/app.py         # Streamlit dashboard (reads artifacts/reports)
 ├── scripts/
 │   ├── run_pipeline.py          # Full pipeline; writes artifacts/reports/*.json
+│   ├── run_spark_batch.py       # Spark batch scoring, loss and PSI job
 │   └── demo_tradeoff.py         # Prints the saved benchmark and approval-lift tables
 ├── artifacts/reports/           # model_benchmark, approval_lift_metrics, drift_audit, run_summary
 ├── notebooks/RiskLens_Deep_Dive.ipynb
 ├── assets/                      # SHAP and PSI figures
-├── tests/                       # 21 unit and integration tests
+├── tests/                       # 25 tests (the 4 Spark tests skip without a JDK)
 ├── pyproject.toml
 └── requirements.txt
 ```
 
 ---
 
-## 📜 License & Citation
+## License & Citation
 
 Open source under the [Apache 2.0 License](LICENSE).
 

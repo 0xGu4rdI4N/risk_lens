@@ -1,0 +1,2 @@
+# Optional: Spark batch pipeline (needs a JDK 17+, e.g. `brew install openjdk@17`)
+pyspark>=4.0
